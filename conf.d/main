@@ -21,7 +21,7 @@ service mysql stop
 # mysql keys
 wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > /usr/share/keyrings/microsoft.gpg
 
-DOTNET_VERSION='8.0'
+DOTNET_VERSION='9.0'
 export DOTNET_CLI_TELEMETRY_OPTOUT=1
 APP_SRC_ROOT='/var/www/aspnetcore-src'
 APP_ROOT='/var/www/aspnetcore'
