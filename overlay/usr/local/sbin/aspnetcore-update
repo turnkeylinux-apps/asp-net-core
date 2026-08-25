@@ -1,0 +1,44 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+SOURCE=/usr/local/share/turnkey-aspnetcore/source
+if [[ $# -ne 1 || $1 != --check ]]; then
+    echo "Usage: $(basename "$0") --check" >&2
+    exit 2
+fi
+[[ -r $SOURCE ]] || {
+    echo "ASP.NET Core source provenance is unavailable" >&2
+    exit 1
+}
+# shellcheck disable=SC1090
+. "$SOURCE"
+
+installed_sdk=$(dotnet --version)
+test "$installed_sdk" = "$sdk_version"
+sdk_candidate=$(apt-cache policy "dotnet-sdk-$dotnet_channel" |
+    awk '/Candidate:/ {print $2; exit}')
+runtime_candidate=$(apt-cache policy "aspnetcore-runtime-$dotnet_channel" |
+    awk '/Candidate:/ {print $2; exit}')
+[[ $sdk_candidate == 10.0.* ]]
+[[ $runtime_candidate == 10.0.* ]]
+
+provider_versions=$(curl --fail --silent --show-error \
+    https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/index.json)
+latest_provider=$(jq -r '.versions[]' <<<"$provider_versions" |
+    awk '/^9\.[0-9]+\.[0-9]+$/' | sort -V | tail -n 1)
+[[ $latest_provider =~ ^9\.[0-9]+\.[0-9]+$ ]]
+provider_asset="https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/$latest_provider/pomelo.entityframeworkcore.mysql.$latest_provider.nupkg"
+curl --fail --silent --show-error --head "$provider_asset" >/dev/null
+
+status=update-available
+if [[ $mysql_ef_version == "$latest_provider" ]] &&
+   dpkg --compare-versions "$sdk_version" eq "${sdk_candidate%%-*}"; then
+    status=up-to-date
+fi
+
+printf 'installed_sdk=%s\nsdk_candidate=%s\nruntime_candidate=%s\n' \
+    "$installed_sdk" "$sdk_candidate" "$runtime_candidate"
+printf 'installed_provider=%s\nprovider_candidate=%s\n' \
+    "$mysql_ef_version" "$latest_provider"
+printf 'provider_asset=%s\nchannel=microsoft-debian-13-dotnet-10-and-stable-pomelo\nstatus=%s\n' \
+    "$provider_asset" "$status"
