@@ -26,7 +26,7 @@ grep -Eq '^turnkey-asp-net-core-19\.0' /etc/turnkey_version
 test "$dotnet_channel" = 10.0
 test "$ef_version" = 9.0.19
 test "$mysql_ef_version" = 9.0.0
-test "$microsoft_key_fingerprint" = BC528686B50D79E339D3721CEB3E94ADBE1229CF
+test "$microsoft_key_fingerprint" = AA86F75E427A19DD33346403EE4D7792F748182B
 test "$(dotnet --version)" = "$sdk_version"
 sha256sum /var/www/aspnetcore-src/packages.lock.json |
     grep -Fq "$lock_sha256"
