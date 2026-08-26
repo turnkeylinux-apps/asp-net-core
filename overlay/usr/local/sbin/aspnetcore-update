@@ -31,6 +31,8 @@ ef_versions=$(curl --fail --silent --show-error \
 latest_ef=$(jq -r '.versions[]' <<<"$ef_versions" |
     awk '/^9\.[0-9]+\.[0-9]+$/' | sort -V | tail -n 1)
 [[ $latest_ef =~ ^9\.[0-9]+\.[0-9]+$ ]]
+ef_asset="https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/$latest_ef/microsoft.entityframeworkcore.relational.$latest_ef.nupkg"
+curl --fail --silent --show-error --head "$ef_asset" >/dev/null
 
 provider_versions=$(curl --fail --silent --show-error \
     https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/index.json)
@@ -54,5 +56,6 @@ printf 'installed_sdk_package=%s\ninstalled_runtime_package=%s\n' \
     "$installed_sdk_package" "$installed_runtime_package"
 printf 'installed_ef=%s\nef_candidate=%s\ninstalled_provider=%s\nprovider_candidate=%s\n' \
     "$ef_version" "$latest_ef" "$mysql_ef_version" "$latest_provider"
-printf 'provider_asset=%s\nchannel=microsoft-debian-13-dotnet-10-and-stable-pomelo\nstatus=%s\n' \
-    "$provider_asset" "$status"
+printf 'ef_asset=%s\nprovider_asset=%s\n' "$ef_asset" "$provider_asset"
+printf 'channel=microsoft-debian-13-dotnet-10-and-stable-ef9-pomelo9\nstatus=%s\n' \
+    "$status"
