@@ -9,8 +9,9 @@ DB_USER=aspnet
 DOTNET_CHANNEL=10.0
 EF_VERSION=9.0.19
 MYSQL_EF_VERSION=9.0.0
-MICROSOFT_KEY_FINGERPRINT=BC528686B50D79E339D3721CEB3E94ADBE1229CF
-MICROSOFT_KEY_SHA256=2fa9c05d591a1582a9aba276272478c262e95ad00acf60eaee1644d93941e3c6
+MICROSOFT_KEY_URL=https://packages.microsoft.com/keys/microsoft-2025.asc
+MICROSOFT_KEY_FINGERPRINT=AA86F75E427A19DD33346403EE4D7792F748182B
+MICROSOFT_KEY_SHA256=d45224d594d969f084232deaaf97c58ca502a9d964c362d7aaef5a76e16b3dd1
 
 service mysql start
 
@@ -32,7 +33,7 @@ service mysql stop
 # Microsoft package feed key
 key_tmp=$(mktemp)
 curl --fail --location --silent --show-error \
-    --output "$key_tmp" https://packages.microsoft.com/keys/microsoft.asc
+    --output "$key_tmp" "$MICROSOFT_KEY_URL"
 printf '%s  %s\n' "$MICROSOFT_KEY_SHA256" "$key_tmp" | sha256sum -c -
 test "$(gpg --batch --show-keys --with-colons "$key_tmp" |
     awk -F: '$1 == "fpr" {print $10; exit}')" = "$MICROSOFT_KEY_FINGERPRINT"
@@ -98,6 +99,7 @@ ef_version=$EF_VERSION
 mysql_ef_version=$MYSQL_EF_VERSION
 lock_sha256=$lock_sha256
 microsoft_key_fingerprint=$MICROSOFT_KEY_FINGERPRINT
+microsoft_key_url=$MICROSOFT_KEY_URL
 microsoft_feed=https://packages.microsoft.com/debian/13/prod
 nuget_feed=https://api.nuget.org/v3/index.json
 EOF
