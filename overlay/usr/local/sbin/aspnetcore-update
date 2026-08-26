@@ -20,9 +20,11 @@ installed_sdk_package=$(dpkg-query --show --showformat='${Version}' \
 installed_runtime_package=$(dpkg-query --show --showformat='${Version}' \
     "aspnetcore-runtime-$dotnet_channel")
 sdk_candidate=$(apt-cache policy "dotnet-sdk-$dotnet_channel" |
-    awk '/Candidate:/ {print $2; exit}')
+    awk '/Candidate:/ && !found {candidate=$2; found=1}
+         END {if (!found) exit 1; print candidate}')
 runtime_candidate=$(apt-cache policy "aspnetcore-runtime-$dotnet_channel" |
-    awk '/Candidate:/ {print $2; exit}')
+    awk '/Candidate:/ && !found {candidate=$2; found=1}
+         END {if (!found) exit 1; print candidate}')
 [[ $sdk_candidate == 10.0.* ]]
 [[ $runtime_candidate == 10.0.* ]]
 
