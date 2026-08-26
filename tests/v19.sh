@@ -2,6 +2,14 @@
 set -Eeuo pipefail
 umask 077
 
+report_failure() {
+    local status=$1 line=$2 command=$3
+    printf 'ASP.NET v19 test failed: status=%s line=%s unit=%s command=%s\n' \
+        "$status" "$line" "${unit:-none}" "$command" >&2
+    exit "$status"
+}
+trap 'report_failure "$?" "$LINENO" "$BASH_COMMAND"' ERR
+
 result=${TKL_TEST_RESULT:?TKL_TEST_RESULT is required}
 db_password=${TKL_TEST_DB_PASS:?TKL_TEST_DB_PASS is required}
 source_file=/usr/local/share/turnkey-aspnetcore/source
