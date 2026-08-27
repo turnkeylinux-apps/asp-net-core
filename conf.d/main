@@ -98,6 +98,7 @@ ef_version=$EF_VERSION
 mysql_ef_version=$MYSQL_EF_VERSION
 lock_sha256=$lock_sha256
 microsoft_key_fingerprint=$MICROSOFT_KEY_FINGERPRINT
+microsoft_key_url=$MICROSOFT_KEY_URL
 microsoft_feed=https://packages.microsoft.com/debian/13/prod
 nuget_feed=https://api.nuget.org/v3/index.json
 EOF
