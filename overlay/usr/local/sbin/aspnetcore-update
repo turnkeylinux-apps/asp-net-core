@@ -1,0 +1,61 @@
+#!/bin/bash
+set -Eeuo pipefail
+
+SOURCE=/usr/local/share/turnkey-aspnetcore/source
+if [[ $# -ne 1 || $1 != --check ]]; then
+    echo "Usage: $(basename "$0") --check" >&2
+    exit 2
+fi
+[[ -r $SOURCE ]] || {
+    echo "ASP.NET Core source provenance is unavailable" >&2
+    exit 1
+}
+# shellcheck disable=SC1090
+. "$SOURCE"
+
+installed_sdk=$(dotnet --version)
+test "$installed_sdk" = "$sdk_version"
+installed_sdk_package=$(dpkg-query --show --showformat='${Version}' \
+    "dotnet-sdk-$dotnet_channel")
+installed_runtime_package=$(dpkg-query --show --showformat='${Version}' \
+    "aspnetcore-runtime-$dotnet_channel")
+sdk_candidate=$(apt-cache policy "dotnet-sdk-$dotnet_channel" |
+    awk '/Candidate:/ {print $2}')
+runtime_candidate=$(apt-cache policy "aspnetcore-runtime-$dotnet_channel" |
+    awk '/Candidate:/ {print $2}')
+[[ $sdk_candidate == 10.0.* ]]
+[[ $runtime_candidate == 10.0.* ]]
+
+ef_versions=$(curl --fail --silent --show-error \
+    https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/index.json)
+latest_ef=$(jq -r '.versions[]' <<<"$ef_versions" |
+    awk '/^9\.[0-9]+\.[0-9]+$/' | sort -V | tail -n 1)
+[[ $latest_ef =~ ^9\.[0-9]+\.[0-9]+$ ]]
+ef_asset="https://api.nuget.org/v3-flatcontainer/microsoft.entityframeworkcore.relational/$latest_ef/microsoft.entityframeworkcore.relational.$latest_ef.nupkg"
+curl --fail --silent --show-error --head "$ef_asset" >/dev/null
+
+provider_versions=$(curl --fail --silent --show-error \
+    https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/index.json)
+latest_provider=$(jq -r '.versions[]' <<<"$provider_versions" |
+    awk '/^9\.[0-9]+\.[0-9]+$/' | sort -V | tail -n 1)
+[[ $latest_provider =~ ^9\.[0-9]+\.[0-9]+$ ]]
+provider_asset="https://api.nuget.org/v3-flatcontainer/pomelo.entityframeworkcore.mysql/$latest_provider/pomelo.entityframeworkcore.mysql.$latest_provider.nupkg"
+curl --fail --silent --show-error --head "$provider_asset" >/dev/null
+
+status=update-available
+if [[ $ef_version == "$latest_ef" ]] &&
+   [[ $mysql_ef_version == "$latest_provider" ]] &&
+   dpkg --compare-versions "$installed_sdk_package" eq "$sdk_candidate" &&
+   dpkg --compare-versions "$installed_runtime_package" eq "$runtime_candidate"; then
+    status=up-to-date
+fi
+
+printf 'installed_sdk=%s\nsdk_candidate=%s\nruntime_candidate=%s\n' \
+    "$installed_sdk" "$sdk_candidate" "$runtime_candidate"
+printf 'installed_sdk_package=%s\ninstalled_runtime_package=%s\n' \
+    "$installed_sdk_package" "$installed_runtime_package"
+printf 'installed_ef=%s\nef_candidate=%s\ninstalled_provider=%s\nprovider_candidate=%s\n' \
+    "$ef_version" "$latest_ef" "$mysql_ef_version" "$latest_provider"
+printf 'ef_asset=%s\nprovider_asset=%s\n' "$ef_asset" "$provider_asset"
+printf 'channel=microsoft-debian-13-dotnet-10-and-stable-ef9-pomelo9\nstatus=%s\n' \
+    "$status"

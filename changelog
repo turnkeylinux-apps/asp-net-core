@@ -1,3 +1,18 @@
+turnkey-asp-net-core-19.0 (1) turnkey; urgency=low
+
+  * Move the sample application to .NET 10 LTS from Microsoft's Debian 13
+    package channel.
+
+  * Update the MariaDB-backed example to the stable Pomelo 9 provider.
+
+  * Lock restored NuGet dependencies and verify the Microsoft feed key.
+
+  * Preserve Nginx HTTPS proxying and systemd supervision on Debian 13 Trixie.
+
+  * See turnkey-core's 19.0 changelog for common platform changes.
+
+ -- TurnKey Linux maintainers <release@turnkeylinux.org>  Tue, 25 Aug 2026 00:00:00 +0000
+
 turnkey-asp-net-core-18.0 (1) turnkey; urgency=low
 
   * Update .net version - to v8.0.

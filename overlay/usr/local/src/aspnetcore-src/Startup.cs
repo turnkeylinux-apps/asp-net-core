@@ -9,8 +9,8 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.HttpOverrides;
 using Pomelo.EntityFrameworkCore.MySql.Infrastructure;
-using Pomelo.EntityFrameworkCore.MySql.Storage;
 using TurnkeyExampleApp.Data;
 
 namespace TurnkeyExampleApp
@@ -29,16 +29,25 @@ namespace TurnkeyExampleApp
         {
             services.AddRazorPages();
 
-            services.AddDbContext<ExampleContext>(options =>
-                    options.UseMySql(Configuration.GetConnectionString("ExampleContext"),
-                        new MySqlServerVersion(new Version(10, 3, 18))
-                    )
-                );
+            services.Configure<ForwardedHeadersOptions>(options =>
+            {
+                options.ForwardedHeaders = ForwardedHeaders.XForwardedFor |
+                    ForwardedHeaders.XForwardedProto;
+            });
+
+            var connectionString = Configuration.GetConnectionString("ExampleContext") ??
+                throw new InvalidOperationException("ExampleContext is not configured");
+            services.AddDbContext<ExampleContext>(options => options.UseMySql(
+                connectionString,
+                ServerVersion.AutoDetect(connectionString)
+            ));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
         {
+            app.UseForwardedHeaders();
+
             if (env.IsDevelopment())
             {
                 app.UseDeveloperExceptionPage();
